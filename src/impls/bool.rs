@@ -12,9 +12,9 @@ where
     /// wrapper around u8::read with consideration to context, such as bit size
     /// true if the result of the read is `1`, false if `0` and error otherwise
     fn read(
-        input: &'a BitSlice<Msb0, u8>,
+        input: &'a BitSlice<Lsb0, u8>,
         inner_ctx: Ctx,
-    ) -> Result<(&'a BitSlice<Msb0, u8>, Self), DekuError> {
+    ) -> Result<(&'a BitSlice<Lsb0, u8>, Self), DekuError> {
         let (rest, val) = u8::read(input, inner_ctx)?;
 
         let ret = match val {
@@ -35,7 +35,7 @@ where
     u8: DekuWrite<Ctx>,
 {
     /// wrapper around u8::write with consideration to context, such as bit size
-    fn write(&self, output: &mut BitVec<Msb0, u8>, inner_ctx: Ctx) -> Result<(), DekuError> {
+    fn write(&self, output: &mut BitVec<Lsb0, u8>, inner_ctx: Ctx) -> Result<(), DekuError> {
         match self {
             true => (0x01u8).write(output, inner_ctx),
             false => (0x00u8).write(output, inner_ctx),
@@ -57,12 +57,12 @@ mod tests {
         case(&hex!("02"), false),
     )]
     fn test_bool(input: &[u8], expected: bool) {
-        let bit_slice = input.view_bits::<Msb0>();
+        let bit_slice = input.view_bits::<Lsb0>();
         let (rest, res_read) = bool::read(bit_slice, ()).unwrap();
         assert_eq!(expected, res_read);
         assert!(rest.is_empty());
 
-        let mut res_write = bitvec![Msb0, u8;];
+        let mut res_write = bitvec![Lsb0, u8;];
         res_read.write(&mut res_write, ()).unwrap();
         assert_eq!(input.to_vec(), res_write.into_vec());
     }
@@ -70,13 +70,13 @@ mod tests {
     #[test]
     fn test_bool_with_context() {
         let input = &[0b01_000000];
-        let bit_slice = input.view_bits::<Msb0>();
+        let bit_slice = input.view_bits::<Lsb0>();
 
         let (rest, res_read) = bool::read(bit_slice, crate::ctx::Size::Bits(2)).unwrap();
         assert_eq!(true, res_read);
         assert_eq!(6, rest.len());
 
-        let mut res_write = bitvec![Msb0, u8;];
+        let mut res_write = bitvec![Lsb0, u8;];
         res_read.write(&mut res_write, ()).unwrap();
         assert_eq!(vec![0b01], res_write.into_vec());
     }

@@ -11,10 +11,10 @@ pub use deku_derive::*;
 /// and a borrow of the latest value to have been read. It should return `true` if reading
 /// should now stop, and `false` otherwise
 fn read_slice_with_predicate<'a, Ctx: Copy, Predicate: FnMut(usize, &u8) -> bool>(
-    input: &'a BitSlice<Msb0, u8>,
+    input: &'a BitSlice<Lsb0, u8>,
     ctx: Ctx,
     mut predicate: Predicate,
-) -> Result<(&'a BitSlice<Msb0, u8>, &[u8]), DekuError>
+) -> Result<(&'a BitSlice<Lsb0, u8>, &[u8]), DekuError>
 where
     u8: DekuRead<'a, Ctx>,
 {
@@ -55,9 +55,9 @@ where
     /// assert_eq!(&[1u8, 2, 3, 4], v)
     /// ```
     fn read(
-        input: &'a BitSlice<Msb0, u8>,
+        input: &'a BitSlice<Lsb0, u8>,
         (limit, inner_ctx): (Limit<u8, Predicate>, Ctx),
-    ) -> Result<(&'a BitSlice<Msb0, u8>, Self), DekuError> {
+    ) -> Result<(&'a BitSlice<Lsb0, u8>, Self), DekuError> {
         match limit {
             // Read a given count of elements
             Limit::Count(mut count) => {
@@ -100,7 +100,7 @@ mod pre_const_generics_impl {
             where
                 $typ: DekuWrite<Ctx>,
             {
-                fn write(&self, output: &mut BitVec<Msb0, u8>, ctx: Ctx) -> Result<(), DekuError> {
+                fn write(&self, output: &mut BitVec<Lsb0, u8>, ctx: Ctx) -> Result<(), DekuError> {
                     for v in *self {
                         v.write(output, ctx)?;
                     }
@@ -114,9 +114,9 @@ mod pre_const_generics_impl {
                     $typ: DekuRead<'a, Ctx>,
                 {
                     fn read(
-                        input: &'a BitSlice<Msb0, u8>,
+                        input: &'a BitSlice<Lsb0, u8>,
                         ctx: Ctx,
-                    ) -> Result<(&'a BitSlice<Msb0, u8>, Self), DekuError>
+                    ) -> Result<(&'a BitSlice<Lsb0, u8>, Self), DekuError>
                     where
                         Self: Sized,
                     {
@@ -136,7 +136,7 @@ mod pre_const_generics_impl {
                 where
                     $typ: DekuWrite<Ctx>,
                 {
-                    fn write(&self, output: &mut BitVec<Msb0, u8>, ctx: Ctx) -> Result<(), DekuError> {
+                    fn write(&self, output: &mut BitVec<Lsb0, u8>, ctx: Ctx) -> Result<(), DekuError> {
                         for v in self {
                             v.write(output, ctx)?;
                         }
@@ -174,9 +174,9 @@ mod const_generics_impl {
         T: DekuRead<'a, Ctx>,
     {
         fn read(
-            input: &'a BitSlice<Msb0, u8>,
+            input: &'a BitSlice<Lsb0, u8>,
             ctx: Ctx,
-        ) -> Result<(&'a BitSlice<Msb0, u8>, Self), DekuError>
+        ) -> Result<(&'a BitSlice<Lsb0, u8>, Self), DekuError>
         where
             Self: Sized,
         {
@@ -202,7 +202,7 @@ mod const_generics_impl {
     where
         T: DekuWrite<Ctx>,
     {
-        fn write(&self, output: &mut BitVec<Msb0, u8>, ctx: Ctx) -> Result<(), DekuError> {
+        fn write(&self, output: &mut BitVec<Lsb0, u8>, ctx: Ctx) -> Result<(), DekuError> {
             for v in self {
                 v.write(output, ctx)?;
             }
@@ -214,7 +214,7 @@ mod const_generics_impl {
     where
         T: DekuWrite<Ctx>,
     {
-        fn write(&self, output: &mut BitVec<Msb0, u8>, ctx: Ctx) -> Result<(), DekuError> {
+        fn write(&self, output: &mut BitVec<Lsb0, u8>, ctx: Ctx) -> Result<(), DekuError> {
             for v in *self {
                 v.write(output, ctx)?;
             }
@@ -231,16 +231,16 @@ mod tests {
     use rstest::rstest;
 
     #[rstest(input,endian,expected,expected_rest,
-        case::normal_le([0xDD, 0xCC, 0xBB, 0xAA].as_ref(), Endian::Little, [0xCCDD, 0xAABB], bits![Msb0, u8;]),
-        case::normal_be([0xDD, 0xCC, 0xBB, 0xAA].as_ref(), Endian::Big, [0xDDCC, 0xBBAA], bits![Msb0, u8;]),
+        case::normal_le([0xDD, 0xCC, 0xBB, 0xAA].as_ref(), Endian::Little, [0xCCDD, 0xAABB], bits![Lsb0, u8;]),
+        case::normal_be([0xDD, 0xCC, 0xBB, 0xAA].as_ref(), Endian::Big, [0xDDCC, 0xBBAA], bits![Lsb0, u8;]),
     )]
     fn test_bit_read(
         input: &[u8],
         endian: Endian,
         expected: [u16; 2],
-        expected_rest: &BitSlice<Msb0, u8>,
+        expected_rest: &BitSlice<Lsb0, u8>,
     ) {
-        let bit_slice = input.view_bits::<Msb0>();
+        let bit_slice = input.view_bits::<Lsb0>();
 
         let (rest, res_read) = <[u16; 2]>::read(bit_slice, endian).unwrap();
         assert_eq!(expected, res_read);
@@ -252,13 +252,13 @@ mod tests {
         case::normal_be([0xDDCC, 0xBBAA], Endian::Big, vec![0xDD, 0xCC, 0xBB, 0xAA]),
     )]
     fn test_bit_write(input: [u16; 2], endian: Endian, expected: Vec<u8>) {
-        let mut res_write = bitvec![Msb0, u8;];
+        let mut res_write = bitvec![Lsb0, u8;];
         input.write(&mut res_write, endian).unwrap();
         assert_eq!(expected, res_write.into_vec());
 
         // test &slice
         let input = input.as_ref();
-        let mut res_write = bitvec![Msb0, u8;];
+        let mut res_write = bitvec![Lsb0, u8;];
         input.write(&mut res_write, endian).unwrap();
         assert_eq!(expected, res_write.into_vec());
     }
@@ -269,22 +269,22 @@ mod tests {
             [0xDD, 0xCC, 0xBB, 0xAA, 0x99, 0x88, 0x77, 0x66].as_ref(),
             Endian::Little,
             [[0xCCDD, 0xAABB], [0x8899, 0x6677]],
-            bits![Msb0, u8;],
+            bits![Lsb0, u8;],
         ),
         case::normal_le(
             [0xDD, 0xCC, 0xBB, 0xAA, 0x99, 0x88, 0x77, 0x66].as_ref(),
             Endian::Big,
             [[0xDDCC, 0xBBAA], [0x9988, 0x7766]],
-            bits![Msb0, u8;],
+            bits![Lsb0, u8;],
         ),
     )]
     fn test_nested_array_bit_read(
         input: &[u8],
         endian: Endian,
         expected: [[u16; 2]; 2],
-        expected_rest: &BitSlice<Msb0, u8>,
+        expected_rest: &BitSlice<Lsb0, u8>,
     ) {
-        let bit_slice = input.view_bits::<Msb0>();
+        let bit_slice = input.view_bits::<Lsb0>();
 
         let (rest, res_read) = <[[u16; 2]; 2]>::read(bit_slice, endian).unwrap();
         assert_eq!(expected, res_read);
@@ -305,13 +305,13 @@ mod tests {
         ),
     )]
     fn test_nested_array_bit_write(input: [[u16; 2]; 2], endian: Endian, expected: Vec<u8>) {
-        let mut res_write = bitvec![Msb0, u8;];
+        let mut res_write = bitvec![Lsb0, u8;];
         input.write(&mut res_write, endian).unwrap();
         assert_eq!(expected, res_write.into_vec());
 
         // test &slice
         let input = input.as_ref();
-        let mut res_write = bitvec![Msb0, u8;];
+        let mut res_write = bitvec![Lsb0, u8;];
         input.write(&mut res_write, endian).unwrap();
         assert_eq!(expected, res_write.into_vec());
     }

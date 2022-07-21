@@ -9,9 +9,9 @@ macro_rules! ImplDekuTraitsCtx {
     ($typ:ty, $readtype:ty, $ctx_arg:tt, $ctx_type:tt) => {
         impl DekuRead<'_, $ctx_type> for $typ {
             fn read(
-                input: &BitSlice<Msb0, u8>,
+                input: &BitSlice<Lsb0, u8>,
                 $ctx_arg: $ctx_type,
-            ) -> Result<(&BitSlice<Msb0, u8>, Self), DekuError>
+            ) -> Result<(&BitSlice<Lsb0, u8>, Self), DekuError>
             where
                 Self: Sized,
             {
@@ -28,7 +28,7 @@ macro_rules! ImplDekuTraitsCtx {
         impl DekuWrite<$ctx_type> for $typ {
             fn write(
                 &self,
-                output: &mut BitVec<Msb0, u8>,
+                output: &mut BitVec<Lsb0, u8>,
                 $ctx_arg: $ctx_type,
             ) -> Result<(), DekuError> {
                 let value = self.get();
@@ -73,12 +73,12 @@ mod tests {
         case(&hex!("00"), NonZeroU8::new(0xFF).unwrap()),
     )]
     fn test_non_zero(input: &[u8], expected: NonZeroU8) {
-        let bit_slice = input.view_bits::<Msb0>();
+        let bit_slice = input.view_bits::<Lsb0>();
         let (rest, res_read) = NonZeroU8::read(bit_slice, ()).unwrap();
         assert_eq!(expected, res_read);
         assert!(rest.is_empty());
 
-        let mut res_write = bitvec![Msb0, u8;];
+        let mut res_write = bitvec![Lsb0, u8;];
         res_read.write(&mut res_write, ()).unwrap();
         assert_eq!(input.to_vec(), res_write.into_vec());
     }
